@@ -7,11 +7,11 @@ $bind = new Bind();
 
 // example of handling a click event on a button with the id of getServertimeButton
 if( $req->type == 'click' && $req->id == 'getServertimeButton' ){
-
+    $formData = $req->getForm();
     // add the output to the response to bind client
     $res->addTask(array(
         'action'        => 'replace',
-        'value'         => 'Hello World!<p>Current server time: ' . date("Y-m-d H:i:s") . '</p>',
+        'value'         => 'Hello ' . $formData['name'] . '!<p>Current server time: ' . date("Y-m-d H:i:s") . '</p>',
         'id'            => 'serverMessage'
     ));  
  }
