@@ -7,6 +7,7 @@ $bind = new Bind();
 
 // example of handling a click event on a button with the id of getServertimeButton
 if( $req->type == 'click' && $req->id == 'getServertimeButton' ){
+    // get the form data.  You can specify the form name in the getForm() method like so $req->getForm('myFormName'); 
     $formData = $req->getForm();
     // add the output to the response to bind client
     $res->addTask(array(
