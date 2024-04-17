@@ -5,7 +5,7 @@ require_once '../../bind.php';
 // initialize bind, res/req vars are set, but can be specified like so Bind('req', 'res')
 $bind = new Bind();
 
-// example of handling a click event on a button with the id of myButton
+// example of handling a click event on a button with the id of getServertimeButton
 if( $req->type == 'click' && $req->id == 'getServertimeButton' ){
 
     // add the output to the response to bind client
