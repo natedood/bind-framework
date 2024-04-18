@@ -134,7 +134,7 @@ class BindRequest {
     // helper function to see if the requested node has a particular class name
     // useful for checking if a req has a particular class name easily i.e. $req->hasClass('btn-primary')
     function hasClass($className) {
-        if (strpos(trim($this->attrs['class']), trim($className)) !== false) {
+        if (strpos(trim($this->attr('class')), trim($className)) !== false) {
             return true;
         }
         return false;
