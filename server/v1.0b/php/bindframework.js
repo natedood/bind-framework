@@ -233,6 +233,8 @@
                                 }
                             }
                         };
+                        console.log('payload');
+                        console.log( payload );
                         var bindCFUrl = $(listener).children().first().parents('[bind-handler]').first().attr('bind-handler');
                         $.ajax({
                             url: bindCFUrl, 
@@ -533,7 +535,8 @@
                 model :             $bind.getModelByNode( componentNode )
             }
         }
-
+        console.log('payload');
+        console.log( payload2 );
         $.ajax({
             url:    bindCFUrl, 
             type:   'POST',
