@@ -28,7 +28,9 @@ if( $req->type == 'click' && $req->hasClass('navItem') ){
         'class'         => 'navItem-' . $req->attr('navname')
     ));
 
-    // add active to the clicked navItem node based on the navname attribute of the item clicked
+    // dispatch an event to open the correct section based on the navname attribute of the item clicked
+    // dispatch will go up to the closest parent with the bind-events listening for the event type of opensection (the body in this case)
+    // notice we are passing the navname attribute of the item clicked as the data attribute of the event, we will read this when listening for this event
     $res->addTask(array(
         'action'        => 'dispatch',
         'type'          => 'opensection',
@@ -36,6 +38,8 @@ if( $req->type == 'click' && $req->hasClass('navItem') ){
     ));
  }
 
+// when the opensection event is dispatched, show the correct section based on the navname attribute of the item clicked
+// in this example, the body component is listening for the opensection event (see the bind-events attribute in the body tag)
  if( $req->type == 'opensection') {
     // handle the display of the correct section
     // hide all sections
@@ -44,6 +48,7 @@ if( $req->type == 'click' && $req->hasClass('navItem') ){
         'class'         => 'navsection'
     ));
     // show the clicked section based on the navname attribute of the item clicked
+    // we are using the data attribute of the custom event to determine which section to show
     $res->addTask(array(
         'action'        => 'show',
         'class'         => 'section-' . $req->data

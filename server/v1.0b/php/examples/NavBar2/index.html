@@ -15,11 +15,28 @@
 
     <title></title>
     </head>
+
+    <!-- we listen for the custom opensection event here so we can show the appropriate section. -->
     <body bind-handler="events.php" bind-events="opensection">        
         
-        <h1>NavBar Example 1</h1>
+        <h1>NavBar Example 2</h1>
+
+        <p>
+            This example extends on the NavBar1 example by showing and hiding sections below the nav.
+        </p>
+        <p>
+            Importantly, the sections are encapsulated and can't be directly modified.  In order to have 
+            the nav items change which sections are shown or hidden, we dispatch a custom event from the nav items.
+        </p>
+        
+        <p>
+            The body component listens for the custom 'opensection' event and shows the appropriate section.  Because 
+            the sections are children of the body tag (always a bind-component), the body can show or hide the sections.
+        </p>
         
         <!-- nav bar component -->
+        <!-- this component will dispatch a custom 'opensection' event which we pick up in the body's bind-events attr -->
+        <!-- due to encapsulation, we can't directly modify the sections so an event is dispatched to the parent of the sections (the body tag in this case) -->
         <div bind-load="c_navbar.php"></div>
 
         <div id="navsections">
