@@ -1,0 +1,58 @@
+<html lang="en">
+    <head>
+        <!--- REQUIRED:   jQuery required this version, use any version or following CDN in your <head> block </head> --->
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+        <!--- SUGGESTED:  json2 suggested, in case of older browsers that do not support the native JSON obj  --->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/json2/20160511/json2.min.js" integrity="sha512-uWk2ZXl3GVrq6DZsrL5dSg1S/F3MNQ9VaDFigqXOoKUnWG58UxOuJGfTrzh5KjpoBvPiFniL2PahU2HUTFMJXw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <!-- REQUIRED: bindCF js, note: needs to be declared AFTER jQuery-->
+        <script src="../../bindframework.js" crossorigin="anonymous"></script>
+        
+        <!-- OPTIONAL: Bootstrap -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+        <!--- Bootstrap icons --->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <title></title>
+    </head>
+    <body bind-handler="events.php">        
+        
+        <h1>Database Example</h1>
+        <p>
+            This simple example demonstrates how to use bind to search a database and display the results in a table.
+        </p>
+        <p>
+            This example also demostrates a special 'enter' event in bind that lets you handle pressing the enter key while
+            a DOM node is selected with the bind-events attribute.  Couldn't be easier!
+        </p>
+        <hr>
+        <div class="container">
+            <p>
+                <!-- notice the bind-events attribute has an event named 'enter' - this is a special bind event
+                     that listens for an enter press in a field. -->
+                <input type="text" id="searchString" name="searchString" class="form-control" placeholder="Enter a search string" 
+                    bind-events="enter" />
+            </p>
+            <p>
+                <!-- we specify a click listener to run the search results here -->
+                <input type="button" id="searchButton" class="btn btn-primary" value="Search" bind-events="click" />
+            </p>
+            <!-- we initially hide this table until results are returned from the database -->
+            <table id="resultsTable" class="table table-bordered table-striped" style="display:none">
+                <thead>
+                    <tr>
+                        <th>Customer ID</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody id="searchResults">
+                    <!-- to be filled from server -->
+                </tbody>
+            </table>
+        </div>    
+        <hr>
+
+    </body>
+</html>
