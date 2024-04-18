@@ -271,21 +271,35 @@
     }
 
     function handleBindableCFEvent( eventObj ){
+        
+        // added special bind enter key handling
+        var tagname = '';
+        if (eventObj.type != 'enter') {
+            tagname = eventObj.currentTarget.tagName.toLowerCase();
+        }
+        var eventType = eventObj.type;
+        var refTarget = eventObj.currentTarget;
+        if (eventObj.type === 'enter') {
+            eventObj    = event;    // deprecated but necessary to support enter key handling
+            eventType   = 'enter';
+            refTarget   = this;
+        }
+
         console.log('bindable event triggered:');
         console.log(eventObj);
 
         payload = {
             type:'handleEvent',
             data: {
-                id: $(eventObj.currentTarget).attr('id'),
-                type: eventObj.type,
-                formdata:$bind.getComponentForm( eventObj.currentTarget ),
-                key : $(eventObj.currentTarget).attr('key'),
-                attrs: getAttributesCollection($(eventObj.currentTarget)),
-                tagname: eventObj.currentTarget.tagName.toLowerCase(),
-                componentid: $(eventObj.currentTarget).parents('[bind-componentid]').first().attr('bind-componentid'),
+                id: $(refTarget).attr('id'),
+                type: eventType,
+                formdata:$bind.getComponentForm( refTarget ),
+                key : $(refTarget).attr('key'),
+                attrs: getAttributesCollection($(refTarget)),
+                tagname: tagname,
+                componentid: $(refTarget).parents('[bind-componentid]').first().attr('bind-componentid'),
                 bodyComponentId : $bind.getBodyComponentId(),
-                model : $bind.getModelByNode( eventObj.currentTarget )
+                model : $bind.getModelByNode( refTarget )
             }
         };
 
@@ -575,8 +589,6 @@
             $(bindableObj).attr( 'bind-componentid', createBindCFUUIDName() );
         } );
 
-        // fire ready events on newly defined components
-
         // process component loading
         processComponentLoadingForNode( parentNode );
 
@@ -588,7 +600,17 @@
             eventTypes.split(' ').map( 
                 (eventType)=> {
                         eventType=eventType.trim();
-                        $(bindableObj).unbind(eventType + '.bindCF').bind(eventType + '.bindCF', handleBindableCFEvent ); 
+                        if (eventType === "enter") {
+                            // special handling for enter key handling since it's not a real native js event
+                            $(bindableObj).unbind('keydown.bindCF').bind('keydown.bindCF', function(event) {
+                                if (event.keyCode == 13) {
+                                    event.preventDefault();
+                                    handleBindableCFEvent.call(this, new CustomEvent('enter', event));
+                                }
+                            });
+                        } else {    
+                            $(bindableObj).unbind(eventType + '.bindCF').bind(eventType + '.bindCF', handleBindableCFEvent);
+                        }
                     // }
                 } 
             );
