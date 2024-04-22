@@ -1,0 +1,50 @@
+<html lang="en">
+    <head>
+        <!--- REQUIRED:   jQuery required this version, use any version or following CDN in your <head> block </head> --->
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+        <!--- SUGGESTED:  json2 suggested, in case of older browsers that do not support the native JSON obj  --->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/json2/20160511/json2.min.js" integrity="sha512-uWk2ZXl3GVrq6DZsrL5dSg1S/F3MNQ9VaDFigqXOoKUnWG58UxOuJGfTrzh5KjpoBvPiFniL2PahU2HUTFMJXw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <!-- REQUIRED: bindCF js, note: needs to be declared AFTER jQuery-->
+        <script src="bindframework.js" crossorigin="anonymous"></script>
+        
+        <!-- OPTIONAL: Bootstrap -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+        <!--- Bootstrap icons --->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <title></title>
+    </head>
+
+    <!-- we listen for the custom opensection event here so we can show the appropriate section. -->
+    <body bind-handler="http://127.0.0.1:9000/events" bind-events="opensection">        
+        
+        <h1>NavBar Example 2</h1>
+
+        <p>
+            This example extends on the NavBar1 example by showing and hiding sections below the nav.
+        </p>
+        <p>
+            Importantly, the sections are encapsulated and can't be directly modified.  In order to have 
+            the nav items change which sections are shown or hidden, we dispatch a custom event from the nav items.
+        </p>
+        
+        <p>
+            The body component listens for the custom 'opensection' event and shows the appropriate section.  Because 
+            the sections are children of the body tag (always a bind-component), the body can show or hide the sections.
+        </p>
+        
+        <!-- nav bar component -->
+        <!-- this component will dispatch a custom 'opensection' event which we pick up in the body's bind-events attr -->
+        <!-- due to encapsulation, we can't directly modify the sections so an event is dispatched to the parent of the sections (the body tag in this case) -->
+        <div bind-load="c_navbar.html"></div>
+
+        <div id="navsections">
+            <div bind-load="c_home.html"         class="navsection section-home"></div>
+            <div bind-load="c_customers.html"    class="navsection section-customers"></div>
+            <div bind-load="c_films.html"        class="navsection section-films"></div>
+        </div>
+
+
+    </body>
+</html>
