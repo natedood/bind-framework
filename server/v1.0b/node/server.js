@@ -5,7 +5,9 @@ const app = express();
 exports.app = app;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-// Use cors middleware and allow all origins - CAREFUL - ONLY FOR TESTING PURPOSES
+
+// Use cors middleware and allow all origins - CAREFUL - ALLOWS cross domain requests to your server 
+// only use if you know what you are doing and the implications of this
 app.use(cors());
 
 // Serve static files from the "public" directory
