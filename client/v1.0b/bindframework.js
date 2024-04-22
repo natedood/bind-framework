@@ -233,9 +233,12 @@
                                 }
                             }
                         };
+                        console.log('payload');
+                        console.log( payload );
                         var bindCFUrl = $(listener).children().first().parents('[bind-handler]').first().attr('bind-handler');
                         $.ajax({
-                            url: bindCFUrl, 
+                            url: bindCFUrl,       
+                            crossDomain: true,
                             type: 'POST',
                             data: 'BINDFRAMEWORK_DATA=' + JSON.stringify(payload),
                             success: function(result){
@@ -269,21 +272,35 @@
     }
 
     function handleBindableCFEvent( eventObj ){
+        
+        // added special bind enter key handling
+        var tagname = '';
+        if (eventObj.type != 'enter') {
+            tagname = eventObj.currentTarget.tagName.toLowerCase();
+        }
+        var eventType = eventObj.type;
+        var refTarget = eventObj.currentTarget;
+        if (eventObj.type === 'enter') {
+            eventObj    = event;    // deprecated but necessary to support enter key handling
+            eventType   = 'enter';
+            refTarget   = this;
+        }
+
         console.log('bindable event triggered:');
         console.log(eventObj);
 
         payload = {
             type:'handleEvent',
             data: {
-                id: $(eventObj.currentTarget).attr('id'),
-                type: eventObj.type,
-                formdata:$bind.getComponentForm( eventObj.currentTarget ),
-                key : $(eventObj.currentTarget).attr('key'),
-                attrs: getAttributesCollection($(eventObj.currentTarget)),
-                tagname: eventObj.currentTarget.tagName.toLowerCase(),
-                componentid: $(eventObj.currentTarget).parents('[bind-componentid]').first().attr('bind-componentid'),
+                id: $(refTarget).attr('id'),
+                type: eventType,
+                formdata:$bind.getComponentForm( refTarget ),
+                key : $(refTarget).attr('key'),
+                attrs: getAttributesCollection($(refTarget)),
+                tagname: tagname,
+                componentid: $(refTarget).parents('[bind-componentid]').first().attr('bind-componentid'),
                 bodyComponentId : $bind.getBodyComponentId(),
-                model : $bind.getModelByNode( eventObj.currentTarget )
+                model : $bind.getModelByNode( refTarget )
             }
         };
 
@@ -294,6 +311,7 @@
         var bindCFUrl = $(eventObj.currentTarget).parents('[bind-handler]').first().attr('bind-handler');
         $.ajax({
             url: bindCFUrl, 
+            crossDomain: true,
             type: 'POST',
             data: 'BINDFRAMEWORK_DATA=' + JSON.stringify(payload),
             success: function(result){
@@ -473,7 +491,8 @@
                 console.log(nodeToLoad.attr('bind-componentid') + ' loading: ' + nodeToLoad.attr('bind-load'));
                 $.ajax({
                     url: nodeToLoad.attr('bind-load'), 
-                    type: 'POST',
+                    crossDomain: true,
+                    type: 'GET',
                     data: 'BINDFRAMEWORK_DATA=',
                     componentid : nodeToLoad.attr('bind-componentid'),
                     success: function(result){
@@ -533,9 +552,11 @@
                 model :             $bind.getModelByNode( componentNode )
             }
         }
-
+        console.log('payload');
+        console.log( payload2 );
         $.ajax({
             url:    bindCFUrl, 
+            crossDomain: true,
             type:   'POST',
             data:   'BINDFRAMEWORK_DATA=' + JSON.stringify(payload2),
             success: function(result){
@@ -572,8 +593,6 @@
             $(bindableObj).attr( 'bind-componentid', createBindCFUUIDName() );
         } );
 
-        // fire ready events on newly defined components
-
         // process component loading
         processComponentLoadingForNode( parentNode );
 
@@ -585,7 +604,17 @@
             eventTypes.split(' ').map( 
                 (eventType)=> {
                         eventType=eventType.trim();
-                        $(bindableObj).unbind(eventType + '.bindCF').bind(eventType + '.bindCF', handleBindableCFEvent ); 
+                        if (eventType === "enter") {
+                            // special handling for enter key handling since it's not a real native js event
+                            $(bindableObj).unbind('keydown.bindCF').bind('keydown.bindCF', function(event) {
+                                if (event.keyCode == 13) {
+                                    event.preventDefault();
+                                    handleBindableCFEvent.call(this, new CustomEvent('enter', event));
+                                }
+                            });
+                        } else {    
+                            $(bindableObj).unbind(eventType + '.bindCF').bind(eventType + '.bindCF', handleBindableCFEvent);
+                        }
                     // }
                 } 
             );

@@ -492,7 +492,7 @@
                 $.ajax({
                     url: nodeToLoad.attr('bind-load'), 
                     crossDomain: true,
-                    type: 'POST',
+                    type: 'GET',
                     data: 'BINDFRAMEWORK_DATA=',
                     componentid : nodeToLoad.attr('bind-componentid'),
                     success: function(result){

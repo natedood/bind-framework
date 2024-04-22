@@ -237,7 +237,8 @@
                         console.log( payload );
                         var bindCFUrl = $(listener).children().first().parents('[bind-handler]').first().attr('bind-handler');
                         $.ajax({
-                            url: bindCFUrl, 
+                            url: bindCFUrl,       
+                            crossDomain: true,
                             type: 'POST',
                             data: 'BINDFRAMEWORK_DATA=' + JSON.stringify(payload),
                             success: function(result){
@@ -310,6 +311,7 @@
         var bindCFUrl = $(eventObj.currentTarget).parents('[bind-handler]').first().attr('bind-handler');
         $.ajax({
             url: bindCFUrl, 
+            crossDomain: true,
             type: 'POST',
             data: 'BINDFRAMEWORK_DATA=' + JSON.stringify(payload),
             success: function(result){
@@ -489,7 +491,8 @@
                 console.log(nodeToLoad.attr('bind-componentid') + ' loading: ' + nodeToLoad.attr('bind-load'));
                 $.ajax({
                     url: nodeToLoad.attr('bind-load'), 
-                    type: 'POST',
+                    crossDomain: true,
+                    type: 'GET',
                     data: 'BINDFRAMEWORK_DATA=',
                     componentid : nodeToLoad.attr('bind-componentid'),
                     success: function(result){
@@ -553,6 +556,7 @@
         console.log( payload2 );
         $.ajax({
             url:    bindCFUrl, 
+            crossDomain: true,
             type:   'POST',
             data:   'BINDFRAMEWORK_DATA=' + JSON.stringify(payload2),
             success: function(result){
