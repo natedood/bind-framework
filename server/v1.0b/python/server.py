@@ -17,43 +17,6 @@ def events():
     # initialize bind, res/req vars are set, but can be specified like so Bind('req', 'res')
     bind = Bind()
 
-    # sample test request for testing server - testing purposes
-    # testdata = {
-    #     "type": "handleEvent",
-    #     "data": {
-    #         "type": "click",
-    #         "formdata": {
-    #             "forms": [
-    #                 {
-    #                     "name": "_noFormName",
-    #                     "fields": {}
-    #                 }
-    #             ]
-    #         },
-    #         "attrs": [
-    #             {
-    #                 "name": "class",
-    #                 "value": "navItem navItem-customers  nav-link btn btn-light"
-    #             },
-    #             {
-    #                 "name": "bind-events",
-    #                 "value": "click"
-    #             },
-    #             {
-    #                 "name": "navname",
-    #                 "value": "customers"
-    #             }
-    #         ],
-    #         "tagname": "span",
-    #         "componentid": "bind_9053c0be74aa49348304fde7b273128c",
-    #         "bodyComponentId": "bind_5e9c775a80604e0794ceebff6963bf55",
-    #         "model": {
-    #             "componentid": "bind_9053c0be74aa49348304fde7b273128c",
-    #             "data": {}
-    #         }
-    #     }
-    # }
-
     # the following can be consolidated to one line like so : 
     bind.req.populate(json.loads(request.form.get('BINDFRAMEWORK_DATA')));
 
@@ -75,7 +38,6 @@ def events():
     # # when an item with the class of navItem is clicked, remove the active class from all navItems and add the active class to the clicked navItem
     # and bind.req.hasClass('navItem')
     if bind.req.type == 'click' :
-        print(json.dumps(bind.req.componentid, indent=4))
         # remove active from all nodes with the class of navItem
         bind.res.addTask({
             'action': 'removeclass',

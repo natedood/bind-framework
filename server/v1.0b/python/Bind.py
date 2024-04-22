@@ -1,12 +1,5 @@
 import sys
 import json
-# from datetime import datetime
-
-# print('Content-Type: text/plain')
-# print('')
-# current_time = datetime.now()
-# print('Current Server Time:', current_time)
-# print('Hello, world!')
 
 class Bind:
     def __init__(self, request_var='req', response_var='res'):
@@ -17,9 +10,6 @@ class Bind:
         # set pointers between req and res objects
         self.res.reqPointer = self.req
         self.req.resPointer = self.res
-
-        # if 'BINDFRAMEWORK_DATA' in $_POST:
-        #     self.req.populate(json.loads($_POST['BINDFRAMEWORK_DATA']))
 
         # set global variables for the request and response objects, based on the request_var and response_var passed in
         globals()[request_var] = self.req
@@ -237,18 +227,7 @@ class BindResponse:
                 'MODEL': model
             }
         }
-        # serialize the response object and decode it to utf-8
+
+        # serialize the response object and return for delivery to client
         serializedResponse = json.dumps(responseObj)
         return serializedResponse
-        # set the content type to json and echo the response
-        # print("Content-Type: application/json; charset=utf-8")
-        # sends to client
-        # print(serializedResponse)
-        # Print headers
-        # sys.stdout.write('Content-Type: application/json;charset=utf-8\n')
-        # sys.stdout.write('\n')
-
-        # # Print data
-        # sys.stdout.write(serializedResponse)
-        # # abort processing
-        # exit()
