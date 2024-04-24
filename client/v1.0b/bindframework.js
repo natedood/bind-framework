@@ -39,6 +39,15 @@
             if( nodeToApplyTo.is(task.SELECTOR) || task.SELF == 'true'){
                 // obviously move to switch or similar strategy, this is just prototyping
                 switch (task.ACTION.toLowerCase()) {
+                    case 'loadroute':
+                        $bind.loadRoute(task.VALUE, task.NAME);
+                        break;
+                    case 'back':
+                        window.history.back();
+                        break;
+                    case 'forward':
+                        window.history.forward();
+                        break;
                     case 'call':
                         // call function
                         window[task.NAME]( $bind.getVarOrJSON(task.DATA) );
@@ -328,6 +337,131 @@
     // IMPORTANT!  model data VARIABLE NAMES will come in UPPERCASE - due to the case insensitivity of CF!
     var $bind = {
         models:[],
+        routeRoot: '/',
+        attachRouteLinkHandlers: function () {
+            // Prevent a tags with bind-route-link attribute from navigating to the href URL
+            document.querySelectorAll('[bind-route-link]').forEach(function(element) {
+                element.removeEventListener('click', $bind.handleBindRouteLinkClick);
+                element.addEventListener('click', $bind.handleBindRouteLinkClick);
+            });
+        },
+        findRouteRoot: function (node, existingRouteRoot) {
+            // var routeRoot = $bind.routeRoot;
+            var routeRootNode = node.closest('[bind-route-root]');
+            if (routeRootNode) {
+                routeRoot = routeRootNode.getAttribute('bind-route-root');
+
+            }else{
+                routeRoot = existingRouteRoot;
+            }
+            return routeRoot;
+        },
+        handleBindRouteLinkClick: function (event) {
+            event.preventDefault();
+            var route = event.target.getAttribute('bind-route-link');
+            route = route.trim().replace('{myroot}', $bind.findRouteRoot(event.target) );
+            var name = event.target.getAttribute('bind-route-name');
+            if (!name || name.trim() === '') {
+                name = window.document.title;
+            }
+            if (route) {
+                $bind.navigate(route, name);
+            }
+        },
+        navigate: function (route, name) {
+            window.history.pushState({route:route, name:name}, name, $bind.routeRoot + route);
+            $bind.loadRoute(route);
+        },
+        hideAllRoutes: function () {
+            var bindRoutes = document.querySelectorAll('[bind-routes]');
+            bindRoutes.forEach(function(element) {
+                $(element).hide();
+            });
+        },
+        getMatchingRoutes: function (route, existingMatches) {
+            console.log('route:' + route);
+            if (!existingMatches) {
+                existingMatches = [];
+            }
+            var bindRoutes = document.querySelectorAll('[bind-routes]');
+            bindRoutes.forEach(function(element) {
+                //var rootedRoutes = element.getAttribute('bind-routes').replace('{myroot}', $bind.findRouteRoot(element));   
+                var rootedRoutes = element.getAttribute('bind-routes');   
+                console.log('rootedRoutes:' + rootedRoutes);
+                var routes = rootedRoutes.split(' ');
+                if (routes.includes(route)) {
+                    existingMatches.push(element);
+                }
+            });
+            return existingMatches;
+        },
+        loadRoute: function (route, hideAllRoutes = true) {
+            if (hideAllRoutes) {
+                $bind.hideAllRoutes();
+            }
+            // var matchedElements = $bind.getMatchingRoutes(route);
+            // console.log('matchedElements:');
+            // console.log(matchedElements); 
+            // matchedElements.forEach(function(element) {
+            //     $(element).show();
+            //     var bindRoutesShow = element.getAttribute('bind-routes-show');
+            //     if (bindRoutesShow && bindRoutesShow.trim() !== '') {
+            //         var routesToShow = bindRoutesShow.trim().split(' ');
+            //         routesToShow.forEach(function(route) {
+            //             $bind.loadRoute(route, false);
+            //         });
+            //     }
+            // });
+            // create a rooted route map
+            var rootedRoutesMap = [];
+            var bindRoutes = document.querySelectorAll('[bind-routes]');
+            var thisRoute = {};
+            bindRoutes.forEach(function(element) {
+                var rootedRoutes = element.getAttribute('bind-routes');
+                var showRoutes = element.getAttribute('bind-routes-show');
+                thisRoute = { element: element, routeString: rootedRoutes, routes: [], showString: showRoutes, show: [] };
+                if (rootedRoutes !== null) {
+                    var routes = rootedRoutes.split(' ');
+                    routes.forEach(function(route) {
+                        thisRoute.routes.push( $bind.getRootedRoute(route,element) );
+                    });
+                }
+                if (showRoutes !== null) {
+                    var routes = showRoutes.split(' ');
+                    routes.forEach(function(route) {
+                        thisRoute.show.push( $bind.getRootedRoute(route,element) );
+                    });
+                }
+                rootedRoutesMap.push(thisRoute);
+            });
+
+            rootedRoutesMap.forEach(function(routeObj) {
+                if (routeObj.routes.includes(route) ) {
+                    $(routeObj.element).show();
+                    routeObj.show.forEach(function(showRoute) {
+                        $bind.loadRoute(showRoute, false);
+                    });
+                }
+            });
+
+            console.log('rootedRoutesMap:');
+            console.log(rootedRoutesMap);
+            // TODO: pass event to server?
+        },
+        getRootedRoute: function (route, element) {
+            if (route.includes('{myroot}')) {
+                var routeRootNode = element.parentNode.closest('[bind-route-root]');
+                if (routeRootNode) {
+                    route = route.replace('{myroot}', routeRootNode.getAttribute('bind-route-root'));
+                    return $bind.getRootedRoute(route, routeRootNode);
+                } else {
+                    route = route.replace('{myroot}', $bind.routeRoot);
+                }
+            }else{
+                return route;
+            }
+            //return route.replace('{myroot}', $bind.getRootedRoute(element));
+        },
         getComponentById( name ){
             return $('[bind-componentid="' + name + '"]');
         },
@@ -479,8 +613,6 @@
 
     };
 
-
-
     function processComponentLoadingForNode( parentNode ){
         // find nodes to load
         var nodesToLoad = $('[bind-load]')
@@ -510,10 +642,47 @@
                 });
             }
         }
-        // remove loaded attribute / set bind-load to false
-        // load component
 
-        // rebind events for the loaded component!
+        // set the route root if it exists (or update if it has changed)
+        // get the highest value route root (usually the body tag, but could be a div or other tag)
+        let routeRoot = Array.from(document.querySelectorAll('[bind-route-root]'))
+            .reduce((highestNode, currentNode) => {
+            const currentNodeDepth = currentNode.getAttribute('bind-route-root').split('/').length;
+            const highestNodeDepth = highestNode ? highestNode.getAttribute('bind-route-root').split('/').length : 0;
+            return currentNodeDepth > highestNodeDepth ? currentNode : highestNode;
+            }, null)
+            ?.getAttribute('bind-route-root') || 'BIND_NO_ROUTE_ROOT_DEFINED';
+        
+        $bind.routeRoot = routeRoot;
+
+        // process routes
+        var nodesToRoute = $('[bind-route]')
+        for( nodeToRoute of nodesToRoute ) {
+            nodeToRoute = $(nodeToRoute);
+            // if( nodeToRoute.attr('bind-routed') != '1' && nodeToRoute.attr('bind-routing') != '1' ){
+            //     nodeToRoute.attr('bind-routing', 1);
+            //     console.log(nodeToRoute.attr('bind-componentid') + ' routing: ' + nodeToRoute.attr('bind-route'));
+            //     $.ajax({
+            //         url: nodeToRoute.attr('bind-route'), 
+            //         crossDomain: true,
+            //         type: 'GET',
+            //         data: 'BINDFRAMEWORK_DATA=',
+            //         componentid : nodeToRoute.attr('bind-componentid'),
+            //         success: function(result){
+            //             var routedComponent = $('[bind-componentid="' + this.componentid + '"]');
+            //             routedComponent.html( result );
+            //             routedComponent.attr('bind-routing', '0');
+            //             routedComponent.attr('bind-routed', '1');
+            //             console.log(this.componentid + ' routed: ' + this.url); 
+                        
+            //             rebindNodeEvents( routedComponent );
+
+            //             // dispatch a ready event for the component
+            //             dispatchComponentReady(routedComponent);
+            //         }
+            //     });
+            // }
+        }
 
     }
 
@@ -619,6 +788,9 @@
                 } 
             );
         } );
+
+        // find bind-route-link events in the component and attached event handlers
+        $bind.attachRouteLinkHandlers();
         // handle watchers      
     }
 
@@ -647,7 +819,17 @@
                 
         // fire ready event
         dispatchComponentReady( $('body') );
-        
+      
+        $bind.loadRoute($bind.routeRoot);
+
+        window.addEventListener('popstate', function(event) {
+            // Handle the back/forward button clicks
+            console.log('Location: ' + document.location);
+            console.log('State: ' + JSON.stringify(event.state));
+            var newRoute = event.state && event.state.route ? event.state.route : $bind.routeRoot;
+            $bind.loadRoute(newRoute);
+        });
+
     });
 
     
