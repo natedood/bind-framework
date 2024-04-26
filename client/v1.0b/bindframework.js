@@ -295,6 +295,8 @@
             refTarget   = this;
         }
 
+        
+
         console.log('bindable event triggered:');
         console.log(eventObj);
 
@@ -338,6 +340,36 @@
     var $bind = {
         models:[],
         routeRoot: '/',
+        init: function () {
+            
+            // if body isn't defined as a component, do so and give it a componentid
+            if( !$('body').attr('bind-component') ){
+                $('body').attr('bind-component', 'true' )
+            }
+            if( !$('body').attr('bind-componentid') ){
+                    $('body').attr('bind-componentid', createBindCFUUIDName() )
+            }
+
+            // initial event bindings
+            rebindNodeEvents( $('body') );
+                    
+            // fire ready event
+            dispatchComponentReady( $('body') );
+
+            $bind.hideAllRoutes();
+
+            $bind.loadRoute($bind.routeRoot);
+
+            window.addEventListener('popstate', function(event) {
+                // Handle the back/forward button clicks
+                console.log('Location: ' + document.location);
+                console.log('State: ' + JSON.stringify(event.state));
+                var newRoute = event.state && event.state.route ? event.state.route : $bind.routeRoot;
+                $bind.loadRoute(newRoute);
+            });
+
+            
+        },
         attachRouteLinkHandlers: function () {
             // Prevent a tags with bind-route-link attribute from navigating to the href URL
             document.querySelectorAll('[bind-route-link]').forEach(function(element) {
@@ -345,28 +377,16 @@
                 element.addEventListener('click', $bind.handleBindRouteLinkClick);
             });
         },
-        findRouteRoot: function (node, existingRouteRoot) {
-            // var routeRoot = $bind.routeRoot;
-            var routeRootNode = node.closest('[bind-route-root]');
-            if (routeRootNode) {
-                routeRoot = routeRootNode.getAttribute('bind-route-root');
-
-            }else{
-                routeRoot = existingRouteRoot;
-            }
-            return routeRoot;
-        },
         handleBindRouteLinkClick: function (event) {
             event.preventDefault();
             var route = event.target.getAttribute('bind-route-link');
-            route = route.trim().replace('{myroot}', $bind.findRouteRoot(event.target) );
+            route = $bind.getRootedRoute(route,event.target);
             var name = event.target.getAttribute('bind-route-name');
             if (!name || name.trim() === '') {
                 name = window.document.title;
             }
-            if (route) {
-                $bind.navigate(route, name);
-            }
+            // allow blank route to be used as a root route
+            $bind.navigate(route, name);
         },
         navigate: function (route, name) {
             window.history.pushState({route:route, name:name}, name, $bind.routeRoot + route);
@@ -378,47 +398,18 @@
                 $(element).hide();
             });
         },
-        getMatchingRoutes: function (route, existingMatches) {
-            console.log('route:' + route);
-            if (!existingMatches) {
-                existingMatches = [];
+        loadRoute: function (route, rootLoadRoute = true) {
+            if (rootLoadRoute) {
+                //$bind.hideAllRoutes();
             }
-            var bindRoutes = document.querySelectorAll('[bind-routes]');
-            bindRoutes.forEach(function(element) {
-                //var rootedRoutes = element.getAttribute('bind-routes').replace('{myroot}', $bind.findRouteRoot(element));   
-                var rootedRoutes = element.getAttribute('bind-routes');   
-                console.log('rootedRoutes:' + rootedRoutes);
-                var routes = rootedRoutes.split(' ');
-                if (routes.includes(route)) {
-                    existingMatches.push(element);
-                }
-            });
-            return existingMatches;
-        },
-        loadRoute: function (route, hideAllRoutes = true) {
-            if (hideAllRoutes) {
-                $bind.hideAllRoutes();
-            }
-            // var matchedElements = $bind.getMatchingRoutes(route);
-            // console.log('matchedElements:');
-            // console.log(matchedElements); 
-            // matchedElements.forEach(function(element) {
-            //     $(element).show();
-            //     var bindRoutesShow = element.getAttribute('bind-routes-show');
-            //     if (bindRoutesShow && bindRoutesShow.trim() !== '') {
-            //         var routesToShow = bindRoutesShow.trim().split(' ');
-            //         routesToShow.forEach(function(route) {
-            //             $bind.loadRoute(route, false);
-            //         });
-            //     }
-            // });
+            var routesToShow = [];
             // create a rooted route map
             var rootedRoutesMap = [];
             var bindRoutes = document.querySelectorAll('[bind-routes]');
             var thisRoute = {};
             bindRoutes.forEach(function(element) {
                 var rootedRoutes = element.getAttribute('bind-routes');
-                var showRoutes = element.getAttribute('bind-routes-show');
+                var showRoutes = element.getAttribute('bind-show-routes');
                 thisRoute = { element: element, routeString: rootedRoutes, routes: [], showString: showRoutes, show: [] };
                 if (rootedRoutes !== null) {
                     var routes = rootedRoutes.split(' ');
@@ -437,15 +428,40 @@
 
             rootedRoutesMap.forEach(function(routeObj) {
                 if (routeObj.routes.includes(route) ) {
-                    $(routeObj.element).show();
+                    console.log('showing route: ' + route);
+                    // show valid route
+                    routesToShow.push(routeObj);
+
+                    //$(routeObj.element).show();
                     routeObj.show.forEach(function(showRoute) {
-                        $bind.loadRoute(showRoute, false);
+                        routesToShow.push(...$bind.loadRoute(showRoute, false));
                     });
                 }
             });
 
-            console.log('rootedRoutesMap:');
-            console.log(rootedRoutesMap);
+            console.log('routesToShow:');
+            console.log(routesToShow);
+            
+            if (rootLoadRoute) {
+                // handle the hiding of routes
+                bindRoutes.forEach(function(element) {    
+                    if (!routesToShow.some(routeObj => routeObj.element === element)) {
+                        // bind routes are exclusive, not inclusive, so hide all routes not in the show list
+                        $(element).hide();
+                    }
+                });
+                // handle the showing of routes
+                routesToShow.forEach(function(routeObj) {
+                    if( !$(routeObj.element).is(':visible') ){
+                        $(routeObj.element).show();
+                        $(routeObj.element).trigger('showroute.bindEvent', routeObj);
+                    }
+                });
+            }
+
+            return routesToShow;
+            //console.log('rootedRoutesMap:');
+            //console.log(rootedRoutesMap);
             // TODO: pass event to server?
         },
         getRootedRoute: function (route, element) {
@@ -775,14 +791,14 @@
                         eventType=eventType.trim();
                         if (eventType === "enter") {
                             // special handling for enter key handling since it's not a real native js event
-                            $(bindableObj).unbind('keydown.bindCF').bind('keydown.bindCF', function(event) {
+                            $(bindableObj).unbind('keydown.bindEvent').bind('keydown.bindEvent', function(event) {
                                 if (event.keyCode == 13) {
                                     event.preventDefault();
                                     handleBindableCFEvent.call(this, new CustomEvent('enter', event));
                                 }
                             });
                         } else {    
-                            $(bindableObj).unbind(eventType + '.bindCF').bind(eventType + '.bindCF', handleBindableCFEvent);
+                            $(bindableObj).unbind(eventType + '.bindEvent').bind(eventType + '.bindEvent', handleBindableCFEvent);
                         }
                     // }
                 } 
@@ -805,31 +821,7 @@
     
     $('document').ready(function(){
         // initial load
-
-        // if body isn't defined as a component, do so and give it a componentid
-        if( !$('body').attr('bind-component') ){
-            $('body').attr('bind-component', 'true' )
-        }
-        if( !$('body').attr('bind-componentid') ){
-                $('body').attr('bind-componentid', createBindCFUUIDName() )
-        }
-
-        // initial event bindings
-        rebindNodeEvents( $('body') );
-                
-        // fire ready event
-        dispatchComponentReady( $('body') );
-      
-        $bind.loadRoute($bind.routeRoot);
-
-        window.addEventListener('popstate', function(event) {
-            // Handle the back/forward button clicks
-            console.log('Location: ' + document.location);
-            console.log('State: ' + JSON.stringify(event.state));
-            var newRoute = event.state && event.state.route ? event.state.route : $bind.routeRoot;
-            $bind.loadRoute(newRoute);
-        });
-
+        $bind.init();   
     });
 
     
