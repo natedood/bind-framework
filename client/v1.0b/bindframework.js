@@ -433,7 +433,7 @@
 
             rootedRoutesMap.forEach(function(routeObj) {
 
-                // Remove anything that matches {param:_name} where _name can be any valid variable name
+                // Remove anything that matches {:_name} where _name can be any valid variable name
                 console.log('route before:' + route);
                 // trim off a trailing slash
                 route = route.replace(/\/+$/, '');
@@ -488,19 +488,31 @@
             let matchingRoutes = [];
             for (let i = 0; i < rootedRoutesMap.length; i++) {
                 let routeObj = rootedRoutesMap[i];
-                // handle exact match
-                if (routeObj.routeString === incomingRoute) {
+                // process basic rooted route matches
+                if (routeObj.routes.includes(incomingRoute)) {
                     matchingRoutes.push(routeObj);
-                // handle parameter matches
-                } else if (routeObj.routeString.includes('{param:')) {
-                    // replace all parameter placeholders with regex
-                    let modifiedRouteString = routeObj.routeString.replace(/{param:[a-zA-Z0-9_]+}/g, '([^/]+)');
-                    let regex = new RegExp(`^${modifiedRouteString}$`);
-                    if (regex.test(incomingRoute)) {
-                        // matches param route
+                }
+
+                // process parameterized route matches
+                // allow for multiple route matching strings in space delmin bind-routes argument
+                var routeStrings = routeObj.routeString.split(' ');
+                for (var j = 0; j < routeStrings.length; j++) {
+                    var routeString = routeStrings[j];
+                    // handle exact match
+                    if (routeString === incomingRoute) {
                         matchingRoutes.push(routeObj);
+                    // handle parameter matches
+                    } else if (routeString.includes('{:')) {
+                        // replace all parameter placeholders with regex
+                        let modifiedRouteString = routeString.replace(/{:[a-zA-Z0-9_]+}/g, '([^/]+)');
+                        let regex = new RegExp(`^${modifiedRouteString}$`);
+                        if (regex.test(incomingRoute)) {
+                            // matches param route
+                            matchingRoutes.push(routeObj);
+                        }
                     }
                 }
+
             }
             // return all matching routes in array format
             return matchingRoutes;
@@ -510,8 +522,8 @@
             let routeSegments = incomingRoute.split('/');
             let parameters = {};
             for (let i = 0; i < templateSegments.length; i++) {
-                if (templateSegments[i].startsWith('{param:')) {
-                    let paramName = templateSegments[i].slice(7, -1); // Remove '{param:' and '}'
+                if (templateSegments[i].startsWith('{:')) {
+                    let paramName = templateSegments[i].slice(2, -1); // Remove '{:' and '}'
                     parameters[paramName] = routeSegments[i];
                 }
             }
