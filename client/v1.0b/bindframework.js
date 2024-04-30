@@ -280,7 +280,7 @@
         return attrArray;
     }
 
-    function handleBindableCFEvent( eventObj ){
+    function handleBindableEvent( eventObj , detailObj){
         
         // added special bind enter key handling
         var tagname = '';
@@ -404,13 +404,14 @@
             }
             var routesToShow = [];
             // create a rooted route map
+            // this is a map of routes handling 
             var rootedRoutesMap = [];
             var bindRoutes = document.querySelectorAll('[bind-routes]');
             var thisRoute = {};
             bindRoutes.forEach(function(element) {
                 var rootedRoutes = element.getAttribute('bind-routes');
                 var showRoutes = element.getAttribute('bind-show-routes');
-                thisRoute = { element: element, routeString: rootedRoutes, routes: [], showString: showRoutes, show: [] };
+                thisRoute = { element: element, loadRoute: route, routeString: rootedRoutes, routes: [], showString: showRoutes, show: [] };
                 if (rootedRoutes !== null) {
                     var routes = rootedRoutes.split(' ');
                     routes.forEach(function(route) {
@@ -425,23 +426,41 @@
                 }
                 rootedRoutesMap.push(thisRoute);
             });
+            
+            // for debugging
+            // console.log('rootedRoutesMap:');
+            // console.log(rootedRoutesMap);
 
             rootedRoutesMap.forEach(function(routeObj) {
-                if (routeObj.routes.includes(route) ) {
-                    console.log('showing route: ' + route);
-                    // show valid route
-                    routesToShow.push(routeObj);
 
-                    //$(routeObj.element).show();
+                // Remove anything that matches {param:_name} where _name can be any valid variable name
+                console.log('route before:' + route);
+                // trim off a trailing slash
+                route = route.replace(/\/+$/, '');
+
+                var matchedRoutes = $bind.findAllMatchingRoutes(route, rootedRoutesMap);
+
+                routesToShow.push(...matchedRoutes);
+                matchedRoutes.forEach(function(routeObj) {
                     routeObj.show.forEach(function(showRoute) {
                         routesToShow.push(...$bind.loadRoute(showRoute, false));
                     });
-                }
+                });
+
+                // Remove duplicates based on matchedRoutes.element object
+                routesToShow = routesToShow.filter((route, index, self) =>
+                    index === self.findIndex((r) => (
+                        r.element === route.element
+                    ))
+                );
+
             });
 
-            console.log('routesToShow:');
-            console.log(routesToShow);
+            // for debugging
+            // console.log('routesToShow:');
+            // console.log(routesToShow);
             
+            // how we know this isn't a recursive call but the main load route call
             if (rootLoadRoute) {
                 // handle the hiding of routes
                 bindRoutes.forEach(function(element) {    
@@ -452,18 +471,52 @@
                 });
                 // handle the showing of routes
                 routesToShow.forEach(function(routeObj) {
+                    // only show hidden elements, this is to prevent flickering or extra event triggering
                     if( !$(routeObj.element).is(':visible') ){
                         $(routeObj.element).show();
+                        // extract route parameters and dispatch event
+                        routeObj.params = $bind.extractRouteParameters(routeObj.routeString, routeObj.loadRoute);
                         $(routeObj.element).trigger('showroute.bindEvent', routeObj);
                     }
                 });
             }
 
             return routesToShow;
-            //console.log('rootedRoutesMap:');
-            //console.log(rootedRoutesMap);
-            // TODO: pass event to server?
         },
+        // find all routes that match the incoming route including routes with parameters
+        findAllMatchingRoutes: function(incomingRoute, rootedRoutesMap) {
+            let matchingRoutes = [];
+            for (let i = 0; i < rootedRoutesMap.length; i++) {
+                let routeObj = rootedRoutesMap[i];
+                // handle exact match
+                if (routeObj.routeString === incomingRoute) {
+                    matchingRoutes.push(routeObj);
+                // handle parameter matches
+                } else if (routeObj.routeString.includes('{param:')) {
+                    // replace all parameter placeholders with regex
+                    let modifiedRouteString = routeObj.routeString.replace(/{param:[a-zA-Z0-9_]+}/g, '([^/]+)');
+                    let regex = new RegExp(`^${modifiedRouteString}$`);
+                    if (regex.test(incomingRoute)) {
+                        // matches param route
+                        matchingRoutes.push(routeObj);
+                    }
+                }
+            }
+            // return all matching routes in array format
+            return matchingRoutes;
+        },
+        extractRouteParameters: function(routeTemplate, incomingRoute) {
+            let templateSegments = routeTemplate.split('/');
+            let routeSegments = incomingRoute.split('/');
+            let parameters = {};
+            for (let i = 0; i < templateSegments.length; i++) {
+                if (templateSegments[i].startsWith('{param:')) {
+                    let paramName = templateSegments[i].slice(7, -1); // Remove '{param:' and '}'
+                    parameters[paramName] = routeSegments[i];
+                }
+            }
+            return parameters;
+        },        
         getRootedRoute: function (route, element) {
             if (route.includes('{myroot}')) {
                 var routeRootNode = element.parentNode.closest('[bind-route-root]');
@@ -794,11 +847,11 @@
                             $(bindableObj).unbind('keydown.bindEvent').bind('keydown.bindEvent', function(event) {
                                 if (event.keyCode == 13) {
                                     event.preventDefault();
-                                    handleBindableCFEvent.call(this, new CustomEvent('enter', event));
+                                    handleBindableEvent.call(this, new CustomEvent('enter', event));
                                 }
                             });
                         } else {    
-                            $(bindableObj).unbind(eventType + '.bindEvent').bind(eventType + '.bindEvent', handleBindableCFEvent);
+                            $(bindableObj).unbind(eventType + '.bindEvent').bind(eventType + '.bindEvent', handleBindableEvent);
                         }
                     // }
                 } 
